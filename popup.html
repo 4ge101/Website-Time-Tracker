@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Website Time Tracker</title>
+  <script src="chart.js"></script>
+  <style>
+body {
+    font-family: 'Roboto', sans-serif;
+    background-color: #1a1a2e;
+    color: #e0e0e0;
+    margin: 0;
+    padding: 20px;
+    width: 350px;
+}
+
+.container {
+    background-color: #16213e;
+    border-radius: 10px;
+    padding: 20px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+h1, h2 {
+    color: #edebf1;
+    margin-bottom: 15px;
+}
+
+.view-toggle, .category-filter {
+    margin-bottom: 20px;
+}
+
+button, select {
+    background-color: #0f3460;
+    color: #e0e0e0;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+button:hover, select:hover {
+    background-color: #1a5290;
+}
+
+button.active {
+    background-color: #1a5290;
+}
+
+.chart-section {
+    margin-bottom: 20px;
+}
+
+.chart-container {
+    height: 250px;
+    position: relative;
+}
+
+#pieChart {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+.time-list-section {
+    margin-bottom: 20px;
+}
+
+.time-list-container {
+    max-height: 200px;
+    overflow-y: auto;
+    padding-right: 10px;
+}
+
+#timeList {
+    list-style-type: none;
+    padding: 0;
+}
+
+#timeList li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    background-color: #0f3460;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.favicon {
+    width: 16px;
+    height: 16px;
+    margin-right: 10px;
+}
+
+.block-section {
+    margin-bottom: 20px;
+}
+
+#blockForm {
+    display: flex;
+    gap: 10px;
+    flex-direction: column;
+}
+
+input[type="text"], input[type="number"] {
+    flex-grow: 1;
+    background-color: #1a1a2e;
+    border: 1px solid #0f3460;
+    color: #e0e0e0;
+    padding: 8px;
+    border-radius: 5px;
+}
+
+.blocked-sites ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.blocked-sites li {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    background-color: #0f3460;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.refresh-btn {
+    margin-bottom: 10px;
+}
+
+/* Scrollbar styles */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #1a1a2e;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #0f3460;
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #1a5290;
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Website Time Tracker</h1>
+    
+    <div class="view-toggle">
+        <button id="dailyBtn" class="active">Daily</button>
+        <button id="weeklyBtn">Weekly</button>
+        <button id="monthlyBtn">Monthly</button>
+    </div>
+
+    <div class="category-filter">
+        <select id="categorySelect">
+            <option value="All">All Categories</option>
+            <option value="Video">Video</option>
+            <option value="Article">Article</option>
+            <option value="Development">Development</option>
+            <option value="Social">Social</option>
+            <option value="Music">Music</option>
+            <option value="Other">Other</option>
+        </select>
+    </div>
+
+
+
+    <div class="time-list-section">
+        <h2>Detailed Time Spent</h2>
+        <div class="time-list-container">
+            <ul id="timeList"></ul>
+        </div>
+    </div>
+
+    <div class="block-section">
+        <h2>Block Website</h2>
+        <form id="blockForm">
+            <input type="text" id="blockDomain" placeholder="Enter domain" required>
+            <input type="number" id="blockDuration" placeholder="Duration (hours)" required>
+            <button type="submit">Block</button>
+        </form>
+    </div>
+
+    <div class="blocked-sites">
+        <h2>Blocked Websites</h2>
+        <ul id="blockedList"></ul>
+    </div>
+    <div class="chart-section">
+      <h2>Most Time Spent</h2>
+      <button id="refreshChart" class="refresh-btn">Refresh Chart</button>
+      <div class="chart-container">
+          <canvas id="pieChart"></canvas>
+      </div>
+  </div>
+</div>
+<script src="popup.js"></script>
+</body>
