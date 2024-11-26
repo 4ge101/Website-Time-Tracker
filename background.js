@@ -17,25 +17,62 @@ const categories = {
   'music.apple.com': 'Music',
   'open.spotify.com': 'Music',
   'music.amazon.com': 'Music',
+  'google.com': 'Search',
+  'amazon.com': 'Shopping',
+  'linkedin.com': 'Professional',
+  'gmail.com': 'Email',
+  'outlook.com': 'Email',
+  'yahoo.com': 'Email',
+  'twitch.tv': 'Video',
+  'tiktok.com': 'Social',
+  'pinterest.com': 'Social',
+  'ebay.com': 'Shopping',
+  'nytimes.com': 'News',
+  'cnn.com': 'News',
+  'bbc.com': 'News',
+  'espn.com': 'Sports',
+  'booking.com': 'Travel',
+  'airbnb.com': 'Travel',
+  'zoom.us': 'Communication',
+  'office.com': 'Productivity',
+  'dropbox.com': 'Cloud Storage',
+  'drive.google.com': 'Cloud Storage',
+  'flipp.com': 'Shopping',
+  'walmart.com': 'Shopping',
+  'target.com': 'Shopping',
+  'bestbuy.com': 'Shopping',
+  'ebay.com': 'Shopping',
   'music.youtube.com': 'Music'
 };
 
-function getDomain(url) {
+function cleanDomain(input) {
   try {
-    const urlObject = new URL(url);
+    // If input doesn't start with a protocol, add one
+    if (!input.startsWith('http://') && !input.startsWith('https://')) {
+      input = 'http://' + input;
+    }
+    
+    const urlObject = new URL(input);
     let domain = urlObject.hostname;
     // Remove 'www.' if present
     domain = domain.replace(/^www\./, '');
     return domain;
   } catch (error) {
-    console.error('Invalid URL:', url);
+    console.error('Invalid URL:', input);
     return null;
   }
 }
+
+function getDomain(url) {
+  return cleanDomain(url);
+}
+
 function isBlockedDomain(domain, blockedSites) {
-  return Object.keys(blockedSites).some(blockedDomain => 
-    domain === blockedDomain || domain.endsWith('.' + blockedDomain)
-  );
+  const cleanedDomain = cleanDomain(domain);
+  return Object.keys(blockedSites).some(blockedDomain => {
+    const cleanedBlockedDomain = cleanDomain(blockedDomain);
+    return cleanedDomain === cleanedBlockedDomain || cleanedDomain.endsWith('.' + cleanedBlockedDomain);
+  });
 }
 
 function getCategory(domain) {
@@ -80,12 +117,18 @@ function checkAndBlockSite(details) {
   return new Promise((resolve) => {
     chrome.storage.local.get(['blockedSites'], (result) => {
       const blockedSites = result.blockedSites || {};
-      if (isBlockedDomain(domain, blockedSites)) {
-        const blockData = blockedSites[Object.keys(blockedSites).find(key => domain === key || domain.endsWith('.' + key))];
+      const matchedDomain = Object.keys(blockedSites).find(key => {
+        const cleanedKey = cleanDomain(key);
+        const cleanedDomain = cleanDomain(domain);
+        return cleanedDomain === cleanedKey || cleanedDomain.endsWith('.' + cleanedKey);
+      });
+
+      if (matchedDomain) {
+        const blockData = blockedSites[matchedDomain];
         if (blockData.active && Date.now() < blockData.endTime) {
           resolve({ redirectUrl: chrome.runtime.getURL("blocked.html") });
         } else if (Date.now() >= blockData.endTime) {
-          blockedSites[domain].active = false;
+          blockedSites[matchedDomain].active = false;
           chrome.storage.local.set({ blockedSites });
           resolve({});
         } else {
@@ -98,7 +141,6 @@ function checkAndBlockSite(details) {
   });
 }
 
-
 chrome.webNavigation.onBeforeNavigate.addListener((details) => {
   checkAndBlockSite(details).then((result) => {
     if (result.redirectUrl) {
@@ -110,10 +152,15 @@ chrome.webNavigation.onBeforeNavigate.addListener((details) => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === "blockSite") {
     const { domain, duration } = request;
-    const cleanDomain = getDomain('http://' + domain); // Ensure we store the clean domain
+    const cleanedDomain = cleanDomain(domain);
+    if (!cleanedDomain) {
+      sendResponse({success: false, error: "Invalid domain format"});
+      return true;
+    }
+    
     chrome.storage.local.get(['blockedSites'], (result) => {
       let blockedSites = result.blockedSites || {};
-      blockedSites[cleanDomain] = {
+      blockedSites[cleanedDomain] = {
         active: true,
         endTime: Date.now() + duration * 60 * 60 * 1000 // Convert hours to milliseconds
       };
@@ -124,11 +171,21 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     return true;
   } else if (request.action === "unblockSite") {
     const { domain } = request;
-    const cleanDomain = getDomain('http://' + domain); // Ensure we use the clean domain
+    const cleanedDomain = cleanDomain(domain);
+    if (!cleanedDomain) {
+      sendResponse({success: false, error: "Invalid domain format"});
+      return true;
+    }
+
     chrome.storage.local.get(['blockedSites'], (result) => {
       let blockedSites = result.blockedSites || {};
-      if (blockedSites[cleanDomain]) {
-        blockedSites[cleanDomain].active = false;
+      const matchedDomain = Object.keys(blockedSites).find(key => {
+        const cleanedKey = cleanDomain(key);
+        return cleanedDomain === cleanedKey;
+      });
+
+      if (matchedDomain) {
+        blockedSites[matchedDomain].active = false;
         chrome.storage.local.set({ blockedSites }, () => {
           sendResponse({success: true});
         });

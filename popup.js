@@ -204,6 +204,7 @@ document.addEventListener('DOMContentLoaded', function() {
     if (domain && !isNaN(duration) && duration > 0) {
       blockSite(domain, duration);
       blockDomainInput.value = '';
+      
       blockDurationInput.value = '';
     } else {
       alert('Please enter a valid domain and duration');
